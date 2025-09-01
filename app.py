@@ -10,6 +10,7 @@ from flask_migrate import Migrate
 from config import Config
 from extensions import db
 from models import Analysis, DrugResult
+from ai_processor import AIProcessorException
 import ai_processor
 
 def create_app(config_class=Config):
@@ -128,15 +129,18 @@ def create_app(config_class=Config):
 
                 analysis_id = run_full_analysis(filepath, new_analysis)
 
-                if analysis_id:
-                    flash('Анализ успешно завершен!', 'success')
-                    return redirect(url_for('analysis_detail', analysis_id=analysis_id))
-                else:
-                    # This case might be obsolete if run_full_analysis raises errors
-                    flash('Анализ не вернул результата.', 'error')
+                flash('Анализ успешно завершен!', 'success')
+                return redirect(url_for('analysis_detail', analysis_id=analysis_id))
+            except (ValueError, AIProcessorException) as e:
+                db.session.rollback()
+                # Log the full error for debugging if needed
+                print(f"Caught an analysis error: {e}")
+                flash(f'Ошибка анализа: {e}', 'error')
             except Exception as e:
                 db.session.rollback()
-                flash(f'Произошла ошибка в процессе анализа: {e}', 'error')
+                # Catch any other unexpected errors
+                print(f"An unexpected error occurred: {e}")
+                flash('Произошла непредвиденная ошибка.', 'error')
         else:
             flash('Недопустимый тип или размер файла.', 'error')
         return redirect(url_for('index'))

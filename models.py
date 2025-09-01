@@ -27,15 +27,8 @@ class DrugResult(db.Model):
 
     # Processed data
     inn_english = db.Column(db.String(255))
-    parsed_dosage = db.Column(db.String(50))
-    parsed_units = db.Column(db.String(50))
-    parsed_frequency = db.Column(db.String(100))
-    normalized_route = db.Column(db.String(100))
 
     # Verification results
-    who_eml_status = db.Column(db.String(50))
-    fda_status = db.Column(db.String(50))
-    ema_status = db.Column(db.String(50))
     pubmed_links = db.Column(db.Text) # Storing links separated by newline
     system_loe = db.Column(db.String(50))
 
