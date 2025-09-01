@@ -137,11 +137,11 @@ def index():
 def upload_file():
     if 'file' not in request.files:
         flash('Не удалось найти файл', 'error')
-        return redirect(request.url)
+        return redirect(url_for('index'))
     file = request.files['file']
     if file.filename == '':
         flash('Файл не выбран', 'error')
-        return redirect(request.url)
+        return redirect(url_for('index'))
     if file and allowed_file(file.filename):
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
         file.save(filepath)
