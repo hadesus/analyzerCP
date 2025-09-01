@@ -1,40 +1,65 @@
+/* --- MediqLab Inspired Redesign --- */
+
+/* 1. Typography & Font Import */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    --background-color: #f8f9fa;
+    --surface-color: #ffffff;
+    --text-color: #212529;
+    --muted-text-color: #6c757d;
+    --primary-color: #0d6efd; /* A nice, standard blue */
+    --primary-hover-color: #0b5ed7;
+    --border-color: #dee2e6;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background-color: #f4f7f6;
-    color: #333;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
     margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+    padding: 20px;
+}
+
+/* 2. Main Containers */
+.container, .results-container {
+    background-color: var(--surface-color);
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+    margin: 20px auto;
 }
 
 .container {
-    background-color: #ffffff;
-    padding: 40px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
     text-align: center;
-    max-width: 500px;
-    width: 100%;
+}
+
+.results-container {
+    width: 95%;
+    max-width: 1400px;
 }
 
 h1 {
-    color: #2c3e50;
-    font-size: 24px;
+    color: var(--text-color);
+    font-weight: 700;
+    font-size: 28px;
     margin-bottom: 10px;
 }
 
 p {
-    color: #7f8c8d;
+    color: var(--muted-text-color);
     font-size: 16px;
     margin-bottom: 30px;
+    line-height: 1.6;
 }
 
+/* 3. Forms and Buttons */
 .file-upload-wrapper {
     position: relative;
-    margin-bottom: 25px;
+    margin: 30px 0;
 }
 
 .file-input {
@@ -43,84 +68,83 @@ p {
 
 .file-label {
     display: block;
-    padding: 15px;
-    background-color: #ecf0f1;
-    border: 2px dashed #bdc3c7;
-    border-radius: 5px;
+    padding: 30px;
+    background-color: #f8f9fa;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
     cursor: pointer;
     transition: background-color 0.3s, border-color 0.3s;
 }
 
 .file-label:hover {
-    background-color: #e8f6f3;
-    border-color: #1abc9c;
+    background-color: #e9ecef;
+    border-color: var(--primary-color);
 }
 
-.submit-btn {
-    background-color: #1abc9c;
+.submit-btn, .export-btn {
+    background-color: var(--primary-color);
     color: white;
     border: none;
-    padding: 15px 30px;
+    padding: 12px 25px;
     font-size: 16px;
-    font-weight: bold;
+    font-weight: 600;
     border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.submit-btn:hover {
-    background-color: #16a085;
+.submit-btn:hover, .export-btn:hover {
+    background-color: var(--primary-hover-color);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Flashed messages styling */
+/* 4. Links */
+.back-link, .history-link, td a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.back-link:hover, .history-link:hover, td a:hover {
+    text-decoration: underline;
+}
+
+.history-link {
+    display: block;
+    margin-top: 20px;
+}
+
+/* 5. Flashed Messages */
 .flashes {
     list-style-type: none;
     padding: 0;
-    margin-bottom: 20px;
+    margin: 20px 0;
 }
 
 .flash {
     padding: 15px;
     border-radius: 5px;
     color: #fff;
-    background-color: #3498db; /* Default info color */
     margin-bottom: 10px;
+    background-color: #6c757d; /* Default grey */
 }
 
 .flash.error {
-    background-color: #e74c3c; /* Red for errors */
+    background-color: #dc3545; /* Red */
 }
 
 .flash.success {
-    background-color: #2ecc71; /* Green for success */
+    background-color: #198754; /* Green */
 }
 
-/* Results Page Styling */
-.results-container {
-    background-color: #ffffff;
-    padding: 40px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    width: 90%;
-    max-width: 1200px;
-    margin: 40px auto;
-}
-
-.results-container h1 {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.back-link {
-    display: inline-block;
+/* 6. Results & History Page */
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 20px;
-    color: #1abc9c;
-    text-decoration: none;
-    font-weight: bold;
-}
-
-.back-link:hover {
-    text-decoration: underline;
+    flex-wrap: wrap;
 }
 
 .results-table-wrapper {
@@ -135,65 +159,18 @@ table {
 
 th, td {
     padding: 12px 15px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     text-align: left;
     vertical-align: top;
 }
 
 th {
-    background-color: #f4f7f6;
-    font-weight: bold;
-    color: #2c3e50;
-}
-
-tbody tr:nth-child(even) {
-    background-color: #f9f9f9;
+    background-color: var(--background-color);
+    font-weight: 600;
 }
 
 tbody tr:hover {
-    background-color: #e8f6f3;
-}
-
-td a {
-    color: #1abc9c;
-    text-decoration: none;
-}
-
-td a:hover {
-    text-decoration: underline;
-}
-
-.results-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.export-btn {
-    background-color: #2980b9;
-    color: white;
-    padding: 10px 15px;
-    border-radius: 5px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
-
-.export-btn:hover {
-    background-color: #2471a3;
-    text-decoration: none;
-}
-
-.history-link {
-    display: block;
-    margin-top: 20px;
-    margin-bottom: -10px;
-    color: #3498db;
-    text-decoration: none;
-}
-.history-link:hover {
-    text-decoration: underline;
+    background-color: #eef5ff;
 }
 
 .pagination {
@@ -202,16 +179,11 @@ td a:hover {
 }
 .pagination a {
     margin: 0 10px;
-    color: #1abc9c;
-    text-decoration: none;
-}
-.pagination a:hover {
-    text-decoration: underline;
 }
 
 .subtitle {
     text-align: center;
-    color: #7f8c8d;
-    margin-top: -20px;
+    color: var(--muted-text-color);
+    margin-top: -10px;
     margin-bottom: 30px;
 }

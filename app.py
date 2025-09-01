@@ -32,6 +32,12 @@ def create_app(config_class=Config):
     Migrate(app, db)
 
     with app.app_context():
+        # Ensure instance folder and upload folder exist
+        try:
+            os.makedirs(app.instance_path)
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        except OSError:
+            pass
         # Load formulary data once on startup
         try:
             with open('who_eml_drug_list.txt', 'r', encoding='utf-8') as f:
