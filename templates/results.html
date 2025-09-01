@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результаты Анализа - Протокол-Анализатор</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="results-container">
+        <h1>Результаты Анализа</h1>
+        <div class="results-header">
+            <a href="{{ url_for('index') }}" class="back-link">← Назад к загрузке</a>
+            <a href="{{ url_for('export_results') }}" class="export-btn">Экспорт в Word (.docx)</a>
+        </div>
+
+        <div class="results-table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Название (из протокола)</th>
+                        <th>МНН (ENG)</th>
+                        <th>Применение (из протокола)</th>
+                        <th>Статус в источниках</th>
+                        <th>Ссылки PubMed</th>
+                        <th>УД (из протокола)</th>
+                        <th>Системный УД</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for drug in results %}
+                    <tr>
+                        <td>{{ drug.inn_protocol }}</td>
+                        <td>{{ drug.inn_english }}</td>
+                        <td>{{ drug.usage_protocol }}</td>
+                        <td>
+                            <strong>WHO EML:</strong> {{ drug.who_eml_status }}<br>
+                            <strong>FDA:</strong> {{ drug.fda_status }}<br>
+                            <strong>EMA:</strong> {{ drug.ema_status }}
+                        </td>
+                        <td>
+                            {% if drug.pubmed_links %}
+                                {% for link in drug.pubmed_links %}
+                                    <a href="{{ link }}" target="_blank">Ссылка</a><br>
+                                {% endfor %}
+                            {% else %}
+                                Нет
+                            {% endif %}
+                        </td>
+                        <td>{{ drug.loe_protocol }}</td>
+                        <td>{{ drug.system_loe }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
