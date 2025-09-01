@@ -1,0 +1,6 @@
+Flask
+python-docx
+translators
+requests
+beautifulsoup4
+PyMuPDF
