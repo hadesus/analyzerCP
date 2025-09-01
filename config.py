@@ -17,6 +17,9 @@ class Config:
     PUBMED_API_TOOL = 'Protocol-Analyzer'
     PUBMED_API_EMAIL = os.getenv('PUBMED_API_EMAIL')
 
+    # Gemini API Key
+    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+
     # File Upload Settings
     UPLOAD_FOLDER = 'uploads'
     # Allowed file extensions (for a basic check)

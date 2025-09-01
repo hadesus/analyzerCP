@@ -22,6 +22,9 @@ class DrugResult(db.Model):
     usage_protocol = db.Column(db.Text)
     loe_protocol = db.Column(db.String(50))
 
+    # AI-generated fields
+    brief_description = db.Column(db.Text)
+
     # Processed data
     inn_english = db.Column(db.String(255))
     parsed_dosage = db.Column(db.String(50))

@@ -2,9 +2,7 @@ import os
 import re
 import io
 import docx
-import translators as ts
 import requests
-from bs4 import BeautifulSoup
 from flask import Flask, render_template, request, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 from flask_migrate import Migrate
@@ -12,17 +10,7 @@ from flask_migrate import Migrate
 from config import Config
 from extensions import db
 from models import Analysis, DrugResult
-
-# --- Mappings (for normalization) ---
-ROUTE_MAP = {
-    'в/в': 'intravenous', 'внутривенно': 'intravenous', 'капельно': 'intravenous drip',
-    'в/м': 'intramuscular', 'внутримышечно': 'intramuscular', 'п/к': 'subcutaneous',
-    'подкожно': 'subcutaneous', 'перорально': 'oral', 'per os': 'oral'
-}
-UNITS_MAP = {
-    'мг': 'mg', 'г': 'g', 'мл': 'ml', 'мкг': 'mcg', 'ме': 'iu', 'ед': 'iu', 'ui': 'iu', 'iu': 'iu'
-}
-# ------------------------------------
+import ai_processor
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -32,20 +20,11 @@ def create_app(config_class=Config):
     Migrate(app, db)
 
     with app.app_context():
-        # Ensure instance folder and upload folder exist
         try:
             os.makedirs(app.instance_path)
             os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
         except OSError:
             pass
-        # Load formulary data once on startup
-        try:
-            with open('who_eml_drug_list.txt', 'r', encoding='utf-8') as f:
-                app.config['WHO_EML_DRUGS'] = {line.strip().lower() for line in f if line.strip()}
-            print(f"--- Loaded {len(app.config['WHO_EML_DRUGS'])} drugs from formulary ---")
-        except FileNotFoundError:
-            app.config['WHO_EML_DRUGS'] = set()
-            print("--- Formulary file not found. Please run formulary_parser.py ---")
 
     # --- Helper Functions ---
     def allowed_file(file):
@@ -53,67 +32,19 @@ def create_app(config_class=Config):
                file.filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS'] and \
                file.mimetype == app.config['ALLOWED_MIMETYPE']
 
-    # --- Core Analysis Functions ---
-    def extract_drug_data_from_docx(filepath):
+    def get_full_text_from_docx(filepath):
+        """Extracts all paragraphs from a .docx file into a single string."""
         try:
             document = docx.Document(filepath)
-            extracted_drugs = []
-            required_headers = {"inn_protocol": "международное непатентованное наименование лс", "usage_protocol": "способ применения", "loe_protocol": ["уд", "уровень доказательности"]}
-            for table in document.tables:
-                headers = [cell.text.strip().lower() for cell in table.rows[0].cells]
-                if required_headers["inn_protocol"] in headers and required_headers["usage_protocol"] in headers:
-                    loe_header_key = next((h for h in required_headers["loe_protocol"] if h in headers), None)
-                    for i in range(1, len(table.rows)):
-                        cells = table.rows[i].cells
-                        inn = cells[headers.index(required_headers["inn_protocol"])].text.strip()
-                        if inn:
-                            extracted_drugs.append({
-                                "inn_protocol": inn,
-                                "usage_protocol": cells[headers.index(required_headers["usage_protocol"])].text.strip(),
-                                "loe_protocol": cells[headers.index(loe_header_key)].text.strip() if loe_header_key else "Н/У"
-                            })
-            return extracted_drugs
+            return "\n".join([para.text for para in document.paragraphs])
         except Exception as e:
-            print(f"Error parsing DOCX: {e}")
+            print(f"Error reading docx file: {e}")
             return None
-
-    def run_full_analysis(filepath, analysis_record):
-        raw_drug_list = extract_drug_data_from_docx(filepath)
-        if raw_drug_list is None: return None
-
-        disease_placeholder = "cancer"
-
-        for raw_drug in raw_drug_list:
-            drug = DrugResult(analysis_id=analysis_record.id, **raw_drug)
-
-            usage_str = drug.usage_protocol or ""
-            drug.parsed_dosage = (m.group(1).replace(',', '.') if (m := re.search(r'(\d+[\.,]?\d*)\s*(мг|г|мл|мкг|ме|ед|ui|iu)', usage_str, re.IGNORECASE)) else "Н/У")
-            drug.parsed_units = (m.group(2).lower() if m else "Н/У")
-            drug.parsed_frequency = (m.group(1) if (m := re.search(r'(\d+\s*раз\w*\s*в\s*\w+)', usage_str, re.IGNORECASE)) else "Н/У")
-            route_str = (m.group(1).lower() if (m := re.search(r'(в/в|внутривенно|в/м|внутримышечно|п/к|подкожно|перорально|per os|капельно)', usage_str, re.IGNORECASE)) else "Н/У")
-            drug.normalized_route = ROUTE_MAP.get(route_str, "unknown")
-
-            try:
-                drug.inn_english = ts.translate_text(drug.inn_protocol, to_language='en', from_language='ru')
-            except Exception as e:
-                print(f"Translation error for '{drug.inn_protocol}': {e}")
-                drug.inn_english = "Translation Error"
-
-            inn_eng = drug.inn_english.lower() if drug.inn_english != "Translation Error" else ""
-            drug.pubmed_links = "\n".join(query_pubmed(inn_eng, disease_placeholder))
-            drug.fda_status = query_regulatory_body(inn_eng, "FDA")
-            drug.ema_status = query_regulatory_body(inn_eng, "EMA")
-            drug.who_eml_status = "Found" if inn_eng in app.config['WHO_EML_DRUGS'] else "Not Found"
-            assign_system_loe(drug)
-
-            db.session.add(drug)
-
-        db.session.commit()
-        return analysis_record.id
 
     def query_pubmed(drug_name, disease):
         if not drug_name or not disease: return []
-        params = {'db': 'pubmed', 'term': f'({drug_name}[Title/Abstract]) AND ({disease}[Title/Abstract]) AND (randomized controlled trial[Publication Type] OR meta-analysis[Publication Type])', 'retmode': 'json', 'retmax': 3, 'tool': app.config['PUBMED_API_TOOL'], 'email': app.config['PUBMED_API_EMAIL'], 'api_key': app.config['PUBMED_API_KEY']}
+        term = f'({drug_name}[Title/Abstract]) AND ({disease}[Title/Abstract]) AND (randomized controlled trial[Publication Type] OR meta-analysis[Publication Type] OR systematic review[Publication Type])'
+        params = {'db': 'pubmed', 'term': term, 'retmode': 'json', 'retmax': 3, 'tool': app.config['PUBMED_API_TOOL'], 'email': app.config['PUBMED_API_EMAIL'], 'api_key': app.config['PUBMED_API_KEY']}
         try:
             response = requests.get("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi", params=params)
             response.raise_for_status()
@@ -123,22 +54,54 @@ def create_app(config_class=Config):
             print(f"PubMed API request failed: {e}")
             return []
 
-    def query_regulatory_body(drug_name, body):
-        if not drug_name: return "N/A"
-        try:
-            if body == "FDA": url, selector = f"https://www.accessdata.fda.gov/scripts/cder/drugsatfda/index.cfm?fuseaction=Search.Search_Drug_Name&DrugName={drug_name}", ("table", {"id": "results-table"})
-            elif body == "EMA": url, selector = f"https://www.ema.europa.eu/en/medicines/search/ema_group_types/ema_medicine?search_api_views_fulltext={drug_name}", ("div", {"class": "view-medicines-search"})
-            else: return "Unknown Body"
-            response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
-            response.raise_for_status()
-            return "Found" if BeautifulSoup(response.content, 'html.parser').find(*selector) else "Not Found"
-        except Exception as e:
-            print(f"{body} scraping failed for {drug_name}: {e}")
-            return "Scraping Error"
+    # --- New AI-Powered Analysis Pipeline ---
+    def run_full_analysis(filepath, analysis_record):
+        # Step 1: Extract full text from document
+        full_text = get_full_text_from_docx(filepath)
+        if not full_text:
+            raise ValueError("Не удалось извлечь текст из документа.")
 
-    def assign_system_loe(drug):
-        if drug.pubmed_links: drug.system_loe = "Класс I (A)"
-        else: drug.system_loe = "Класс IV (D)"
+        # Step 2: First AI Call to get context and drug list
+        initial_analysis = ai_processor.analyze_document_context(full_text)
+        if not initial_analysis or 'disease_context' not in initial_analysis or 'drug_list' not in initial_analysis:
+            raise ValueError("Первичный анализ документа с помощью ИИ не удался или вернул неверный формат.")
+
+        disease_context = initial_analysis['disease_context']
+        raw_drug_list = initial_analysis['drug_list']
+
+        # Step 3: Loop through drugs for detailed analysis
+        for raw_drug in raw_drug_list:
+            inn_protocol = raw_drug.get('inn_protocol')
+            usage_protocol = raw_drug.get('usage_protocol')
+            loe_protocol = raw_drug.get('loe_protocol')
+
+            if not inn_protocol:
+                continue
+
+            # Second AI call for details
+            details = ai_processor.get_drug_details(inn_protocol, usage_protocol, disease_context)
+            if not details:
+                details = {} # Ensure details is a dict to avoid errors on .get()
+
+            # Query PubMed with AI-provided English name
+            pubmed_links = query_pubmed(details.get('inn_english'), disease_context)
+
+            # Create and save the final DrugResult object
+            drug_result = DrugResult(
+                analysis_id=analysis_record.id,
+                inn_protocol=inn_protocol,
+                usage_protocol=usage_protocol,
+                loe_protocol=loe_protocol,
+                inn_english=details.get('inn_english', 'Translation Error'),
+                brief_description=details.get('brief_description', 'AI analysis failed.'),
+                system_loe=details.get('system_loe', 'Unknown'),
+                pubmed_links="\n".join(pubmed_links)
+                # Old fields are no longer populated by this pipeline
+            )
+            db.session.add(drug_result)
+
+        db.session.commit()
+        return analysis_record.id
 
     # --- Flask Routes ---
     @app.route('/')
@@ -162,12 +125,18 @@ def create_app(config_class=Config):
                 db.session.commit()
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"{new_analysis.id}_{filename}")
                 file.save(filepath)
+
                 analysis_id = run_full_analysis(filepath, new_analysis)
+
                 if analysis_id:
+                    flash('Анализ успешно завершен!', 'success')
                     return redirect(url_for('analysis_detail', analysis_id=analysis_id))
+                else:
+                    # This case might be obsolete if run_full_analysis raises errors
+                    flash('Анализ не вернул результата.', 'error')
             except Exception as e:
                 db.session.rollback()
-                flash(f'Произошла непредвиденная ошибка: {e}', 'error')
+                flash(f'Произошла ошибка в процессе анализа: {e}', 'error')
         else:
             flash('Недопустимый тип или размер файла.', 'error')
         return redirect(url_for('index'))
@@ -188,7 +157,7 @@ def create_app(config_class=Config):
         analysis = Analysis.query.get_or_404(analysis_id)
         document = docx.Document()
         document.add_heading(f'Результаты Анализа: {analysis.filename}', 0)
-        headers = ['Название (из протокола)', 'МНН (ENG)', 'Применение (из протокола)', 'Статус в источниках', 'Ссылки PubMed', 'УД (из протокола)', 'Системный УД']
+        headers = ['Название (из протокола)', 'МНН (ENG)', 'Краткое описание', 'Ссылки PubMed', 'УД (из протокола)', 'Системный УД']
         table = document.add_table(rows=1, cols=len(headers))
         table.style = 'Table Grid'
         for i, header in enumerate(headers):
@@ -197,11 +166,10 @@ def create_app(config_class=Config):
             row_cells = table.add_row().cells
             row_cells[0].text = drug.inn_protocol or ''
             row_cells[1].text = drug.inn_english or ''
-            row_cells[2].text = drug.usage_protocol or ''
-            row_cells[3].text = f"WHO EML: {drug.who_eml_status}\nFDA: {drug.fda_status}\nEMA: {drug.ema_status}"
-            row_cells[4].text = drug.pubmed_links if drug.pubmed_links else "Нет"
-            row_cells[5].text = drug.loe_protocol or ''
-            row_cells[6].text = drug.system_loe or ''
+            row_cells[2].text = drug.brief_description or ''
+            row_cells[3].text = drug.pubmed_links if drug.pubmed_links else "Нет"
+            row_cells[4].text = drug.loe_protocol or ''
+            row_cells[5].text = drug.system_loe or ''
         file_stream = io.BytesIO()
         document.save(file_stream)
         file_stream.seek(0)
