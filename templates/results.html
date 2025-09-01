@@ -30,7 +30,7 @@
                 <tbody>
                     {% for drug in results %}
                     <tr>
-                        <td>{{ drug.inn_protocol }}</td>
+                        <td><a href="https://mediqlab.com/search?q={{ drug.inn_protocol|urlencode }}" target="_blank" title="Искать на mediqlab.com">{{ drug.inn_protocol }}</a></td>
                         <td>{{ drug.inn_english }}</td>
                         <td>{{ drug.usage_protocol }}</td>
                         <td>
