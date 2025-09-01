@@ -1,0 +1,56 @@
+{% extends "_base.html" %}
+
+{% block title %}Результаты Анализа: {{ analysis.filename }}{% endblock %}
+
+{% block content %}
+<div class="results-container">
+    <h1>Результаты Анализа: {{ analysis.filename }}</h1>
+    <p class="subtitle">Проанализировано: {{ analysis.upload_timestamp.strftime('%Y-%m-%d %H:%M:%S') }} UTC</p>
+
+    <div class="results-header">
+        <a href="{{ url_for('history') }}" class="back-link">← К истории анализов</a>
+        <a href="{{ url_for('export_results', analysis_id=analysis.id) }}" class="export-btn">Экспорт в Word (.docx)</a>
+    </div>
+
+    <div class="results-table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Название (из протокола)</th>
+                    <th>МНН (ENG)</th>
+                    <th>Применение (из протокола)</th>
+                    <th>Статус в источниках</th>
+                    <th>Ссылки PubMed</th>
+                    <th>УД (из протокола)</th>
+                    <th>Системный УД</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for drug in analysis.drug_results %}
+                <tr>
+                    <td><a href="https://mediqlab.com/search?q={{ drug.inn_protocol|urlencode }}" target="_blank" title="Искать на mediqlab.com">{{ drug.inn_protocol }}</a></td>
+                    <td>{{ drug.inn_english }}</td>
+                    <td>{{ drug.usage_protocol }}</td>
+                    <td>
+                        <strong>WHO EML:</strong> {{ drug.who_eml_status }}<br>
+                        <strong>FDA:</strong> {{ drug.fda_status }}<br>
+                        <strong>EMA:</strong> {{ drug.ema_status }}
+                    </td>
+                    <td>
+                        {% if drug.pubmed_links %}
+                            {% for link in drug.pubmed_links.split('\n') %}
+                                {% if link %}<a href="{{ link }}" target="_blank">Ссылка</a><br>{% endif %}
+                            {% endfor %}
+                        {% else %}
+                            Нет
+                        {% endif %}
+                    </td>
+                    <td>{{ drug.loe_protocol }}</td>
+                    <td>{{ drug.system_loe }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -25,3 +25,9 @@ class Config:
     ALLOWED_MIMETYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     # Max file size (e.g., 10MB)
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024
+
+    # --- Database Settings ---
+    # Use SQLite for simplicity
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///analysis.db')
+    # Silence the deprecation warning
+    SQLALCHEMY_TRACK_MODIFICATIONS = False

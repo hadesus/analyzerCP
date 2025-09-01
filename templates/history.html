@@ -1,0 +1,49 @@
+{% extends "_base.html" %}
+
+{% block title %}История Анализов{% endblock %}
+
+{% block content %}
+<div class="results-container">
+    <h1>История Анализов</h1>
+
+    <div class="results-header">
+        <a href="{{ url_for('index') }}" class="back-link">← Назад к загрузке</a>
+    </div>
+
+    <div class="results-table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Имя файла</th>
+                    <th>Дата загрузки</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for analysis in analyses.items %}
+                <tr>
+                    <td>{{ analysis.id }}</td>
+                    <td>{{ analysis.filename }}</td>
+                    <td>{{ analysis.upload_timestamp.strftime('%Y-%m-%d %H:%M:%S') }} UTC</td>
+                    <td>
+                        <a href="{{ url_for('analysis_detail', analysis_id=analysis.id) }}">Просмотреть</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+        {% if analyses.has_prev %}
+            <a href="{{ url_for('history', page=analyses.prev_num) }}">&laquo; Предыдущая</a>
+        {% endif %}
+        <span>Страница {{ analyses.page }} из {{ analyses.pages }}.</span>
+        {% if analyses.has_next %}
+            <a href="{{ url_for('history', page=analyses.next_num) }}">Следующая &raquo;</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

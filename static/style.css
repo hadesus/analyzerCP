@@ -184,3 +184,34 @@ td a:hover {
     background-color: #2471a3;
     text-decoration: none;
 }
+
+.history-link {
+    display: block;
+    margin-top: 20px;
+    margin-bottom: -10px;
+    color: #3498db;
+    text-decoration: none;
+}
+.history-link:hover {
+    text-decoration: underline;
+}
+
+.pagination {
+    margin-top: 20px;
+    text-align: center;
+}
+.pagination a {
+    margin: 0 10px;
+    color: #1abc9c;
+    text-decoration: none;
+}
+.pagination a:hover {
+    text-decoration: underline;
+}
+
+.subtitle {
+    text-align: center;
+    color: #7f8c8d;
+    margin-top: -20px;
+    margin-bottom: 30px;
+}

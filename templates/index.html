@@ -1,33 +1,28 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Протокол-Анализатор</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <div class="container">
-        <h1>Программный комплекс «Протокол-Анализатор»</h1>
-        <p>Загрузите клинический протокол в формате .docx для анализа.</p>
+{% extends "_base.html" %}
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="flashes">
-              {% for category, message in messages %}
-                <div class="flash {{ category }}">{{ message }}</div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        {% endwith %}
+{% block content %}
+<div class="container">
+    <h1>Программный комплекс «Протокол-Анализатор»</h1>
+    <p>Загрузите клинический протокол в формате .docx для анализа.</p>
 
-        <form action="/upload" method="post" enctype="multipart/form-data">
-            <div class="file-upload-wrapper">
-                <input type="file" name="file" id="file" class="file-input" required>
-                <label for="file" class="file-label">Выберите файл...</label>
-            </div>
-            <button type="submit" class="submit-btn">Анализировать</button>
-        </form>
-    </div>
-</body>
-</html>
+    <a href="{{ url_for('history') }}" class="history-link">Перейти к истории анализов →</a>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+        <div class="file-upload-wrapper">
+            <input type="file" name="file" id="file" class="file-input" required>
+            <label for="file" class="file-label">Выберите файл...</label>
+        </div>
+        <button type="submit" class="submit-btn">Анализировать</button>
+    </form>
+</div>
+{% endblock %}
