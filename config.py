@@ -21,7 +21,9 @@ class Config:
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
     # File Upload Settings
-    UPLOAD_FOLDER = 'uploads'
+    # Note: app.instance_path is the absolute path to the instance folder.
+    # We create the 'uploads' directory inside the instance folder.
+    UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'instance', 'uploads')
     # Allowed file extensions (for a basic check)
     ALLOWED_EXTENSIONS = {'docx'}
     # Allowed MIME type for more robust validation
