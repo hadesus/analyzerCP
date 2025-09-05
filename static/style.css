@@ -81,6 +81,13 @@ p {
     border-color: var(--primary-color);
 }
 
+.file-label.file-selected {
+    background-color: #eef5ff;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
 .submit-btn, .export-btn {
     background-color: var(--primary-color);
     color: white;

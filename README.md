@@ -1,30 +1,28 @@
 # Protocol-Analyzer
 
-Protocol-Analyzer is a web application designed to automate the process of extracting, analyzing, and verifying lists of medications from clinical protocol documents. It checks the extracted drugs against international formularies and regulatory approvals to generate a comprehensive analysis report.
+Protocol-Analyzer is a web application that uses Artificial Intelligence to automate the process of extracting and analyzing lists of medications from clinical protocol documents.
 
 ## Features
 
--   **Web-Based Interface**: Modern and clean UI for uploading `.docx` files.
--   **DOCX Parsing**: Automatically finds and extracts drug information from tables within Word documents.
--   **NLP Pipeline**:
-    -   Parses complex "usage" strings to extract structured data (dosage, units, route, frequency).
-    -   Standardizes medical terms to a common format.
-    -   Translates Russian drug names (INNs) to English for international database queries.
--   **Multi-Source Verification**:
-    -   Checks against a local formulary built from the WHO Essential Medicines List.
-    -   Queries the FDA and EMA websites for regulatory approval status.
-    -   Searches PubMed for relevant clinical trials and meta-analyses.
--   **System-Generated Level of Evidence**: Assigns a Level of Evidence (LoE) based on the quality of findings on PubMed.
--   **Comprehensive Reporting**: Displays the full analysis in a clear table on a results web page.
--   **Word Export**: Allows the user to download the final report as a `.docx` file.
+-   **Web Interface**: A modern and clean user interface for uploading `.docx` files.
+-   **AI-Powered Analysis**:
+    -   Determines the main disease or clinical context of the protocol.
+    -   Extracts a complete list of medications.
+    -   Retrieves the English INN (International Nonproprietary Name) for each drug.
+    -   Generates a brief description of the drug's role in treatment.
+    -   Assesses the level of evidence based on the AI's knowledge base.
+-   **PubMed Integration**: Automatically searches for relevant clinical trials and meta-analyses for each drug.
+-   **Comprehensive Reporting**: Displays the full analysis in a clear table on the results page.
+-   **Word Export**: Allows downloading the final report as a `.docx` file.
 
-## Setup
+## Setup and Installation
 
 Follow these steps to set up and run the project locally.
 
 ### 1. Prerequisites
 
 -   Python 3.7+
+-   A Google Gemini API Key (see below)
 
 ### 2. Installation
 
@@ -46,15 +44,26 @@ Follow these steps to set up and run the project locally.
     pip install -r requirements.txt
     ```
 
-### 3. One-Time Data Preparation
+### 3. API Key Configuration
 
-The application uses a local copy of the WHO Essential Medicines List (EML) for verification. You need to generate this data file by running the included parser script. This script will download the official PDF from the WHO website, parse it, and create a local drug list.
+The application requires API access to Google Gemini and PubMed.
 
-**Run the parser:**
+1.  **Create a `.env` file** in the project's root directory.
+2.  **Add your API keys to it:**
+    ```
+    GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+    PUBMED_API_KEY="YOUR_PUBMED_API_KEY" # Optional, but recommended
+    PUBMED_API_TOOL="ProtocolAnalyzer"
+    PUBMED_API_EMAIL="your.email@example.com"
+    ```
+   - Get a Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+   - A PubMed API key can be obtained from [your NCBI account](https://www.ncbi.nlm.nih.gov/account/).
+
+### 4. Apply Database Migrations
+On the first run or after a data model update, you need to apply the database migrations:
 ```bash
-python3 formulary_parser.py
+flask db upgrade
 ```
-This will create a `who_eml_drug_list.txt` file in the root directory. This step only needs to be done once.
 
 ## Running the Application
 
@@ -70,6 +79,6 @@ The application will be available at `http://127.0.0.1:8080`.
 
 1.  Open your web browser and navigate to `http://127.0.0.1:8080`.
 2.  Use the file upload form to select a clinical protocol in `.docx` format.
-3.  Click the "Анализировать" (Analyze) button.
-4.  You will be redirected to the results page, which will display a detailed table with the analysis for each drug found in the document.
-5.  On the results page, you can click the "Экспорт в Word (.docx)" (Export to Word) button to download the report as a Word document.
+3.  Click the "Analyze" button.
+4.  You will be redirected to the results page, which displays a detailed table with the analysis for each drug found.
+5.  On the results page, you can click the "Export to Word (.docx)" button to download the report.
